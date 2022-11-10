@@ -1,0 +1,114 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skinforskin
+  namespace: dbkc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skinforskin
+  template:
+    metadata:
+      labels:
+        app: skinforskin
+    spec:
+      volumes:
+      - name: skinforskin
+        persistentVolumeClaim:
+          claimName: skinforskin
+      containers:
+      - name: skinforskin
+        image: ghcr.io/jwklijnsma/webserverekwrodpress:main
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: skinforskin
+            mountPath: /var/www/html
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skinforskin
+  namespace: dbkc
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: skinforskin
+  type: 
+
+--
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skinforskin-sftp
+  namespace: dbkc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skinforskin-sftp
+  template:
+    metadata:
+      labels:
+        app: skinforskin-sftp
+    spec:
+      volumes:
+      - name: skinforskin
+        persistentVolumeClaim:
+          claimName: skinforskin
+      containers:
+      - name: skinforskin
+        image: atmoz/sftp:latest
+        imagePullPolicy: Always
+        env:
+        - name: user
+          value: "hsadmin"
+        - name: passwd
+          value: "654321"
+        command: ["/entrypoint", "$(user):$(passwd):2001:2001"]
+        volumeMounts:
+          - name: skinforskin
+            mountPath: /var/www/html
+        ports:
+        - containerPort: 22
+          name: ssh
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skinforskin-sftp
+  namespace: dbkc
+spec:
+  ports:
+  - name: ssh
+    port: 22
+    protocol: TCP
+    targetPort: 22
+  selector:
+    app: skinforskin-sftp
+  type: 
+
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: skinforskin
+  namespace: dbkc
+spec:
+  storageClassName: csi-cephfs-sc
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
