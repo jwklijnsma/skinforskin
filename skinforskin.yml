@@ -45,7 +45,7 @@ spec:
     app: skinforskin
   type: 
 
---
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -97,7 +97,6 @@ spec:
   selector:
     app: skinforskin-sftp
   type: 
-
 
 ---
 apiVersion: v1
